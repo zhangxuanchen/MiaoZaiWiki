@@ -1,0 +1,12 @@
+# 喵藏 · 抓网页用到的依赖
+#
+# 只列**直接依赖**两个，其余（lxml / jusText / courlan / htmldate / dateparser …）
+# 由 pip 自己解析拉取 —— 这样在 macOS / Windows / Linux 上都能选到对应平台的现成包，
+# 不会因为某个小版本退役而装不上。
+#
+# 想要"完全复现某台机器上的版本"，改用 requirements.lock.txt。
+#
+# 重要：这两个包是**可选**的。不装也能用记笔记 / 建书库 / 整理索引 / 浏览目录，
+#       只有抓网页（把链接转成本地 md）需要它们。
+trafilatura>=2.0
+beautifulsoup4>=4.12

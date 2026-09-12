@@ -29,6 +29,35 @@ description: 把网页链接或随手记的笔记，抓取并整理成一份带�
 
 ---
 
+## 平台支持（macOS / Windows / Linux 都能跑）
+
+这个 skill 是**纯 Python 脚本 + 一份说明书**，没有任何平台专属依赖。
+
+| 项 | macOS | Windows | Linux |
+|---|---|---|---|
+| 记笔记 / 建库 / 整理索引 | ✓ | ✓ | ✓ |
+| 抓网页（需 `trafilatura`） | ✓ | ✓ | ✓ |
+| 一键安装脚本 | `setup.sh` | `setup.ps1` | `setup.sh` |
+| 默认配置位置 | `~/.config/miao-zang/` | `%APPDATA%\miao-zang\` | `~/.config/miao-zang/` |
+| UA（抓站时声明的系统） | Macintosh | Windows NT | X11 |
+
+**已经为跨平台做的四件事**（都是踩过才知道要做的）：
+
+1. **文本读写全部显式 `encoding="utf-8"`** —— Windows 默认 cp936，不写就是乱码。
+2. **输出流启动时钉成 UTF-8** —— 否则 `--doctor` 的 `✓`/`✗` 在 Windows 管道里
+   直接触发 `UnicodeEncodeError`（详见 `references/troubleshoot.md`）。
+3. **路径全用 `pathlib`** —— 不手拼 `/`，Windows 的反斜杠不用管。
+4. **配置不写死、也不往用户主目录乱写** —— 找不到配置就用内置默认值（不再"顺手建一个"）。
+
+**唯一的硬依赖是 Python 3.8+**（用 `TextIOWrapper.reconfigure` 那段要求 3.7+，
+所以取 3.8 作为下限更稳妥）。抓网页那两个包是可选的。
+
+**这不代表桌面猫也能跨平台** —— 那个 app 是 AppKit 自绘的，只能在 macOS 上跑。
+但**引擎和外壳本来就是分开的**：Windows 用户拿这个 skill，就是拿到了那只猫的"肚子"，
+只是没有那张脸。详见 `references/desktop-pet.md`。
+
+---
+
 ## 第一步永远是自检
 
 先确定用哪个解释器，再问它环境行不行。

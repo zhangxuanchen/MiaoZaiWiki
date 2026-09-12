@@ -63,3 +63,7 @@ docs/*.mp4
 .vscode/
 *.swp
 *.swo
+
+# ── 验证工具链的产物 ──
+harness/build/         # head.swift + 编译出来的工具 + 隐藏的编译目录
+harness/out/           # 对照图（随时可以重出）

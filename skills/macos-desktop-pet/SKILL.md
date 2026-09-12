@@ -3962,3 +3962,193 @@ PASS  覆盖优先于配置          ← 这条居然过了，更容易误判成
 
 **规矩**：凡是要验"读盘/落盘"，把那段代码放在测试文件的**最前面**，在任何可能触碰该单例的
 调用之前；并且**落盘用的 id 要来自你自己铺的那份配置**，否则断言只是碰巧通过。
+
+---
+
+## ⚠️ 工具不许放 `/tmp` —— 这条有血证
+
+那套验证脚手架（渲染脚本、指纹脚本、190+ 条断言、head 副本切分工具）
+一直放在 `/tmp/cat_export/`，**从来没进过项目目录**。
+2026-09-12 上午要用时，全盘搜不到任何痕迹（按文件名和按内容都搜过，废纸篓也是空的）。
+
+机器当天早上重启过，`/tmp` 本来也会被系统定期清理 —— 哪一下弄没的已不可考，
+**但根本原因跟「是谁删的」无关：它不在项目里，就没有任何副本。**
+
+项目本体（`~/Documents/ai/MiaoZaiWiki`）完好：main.swift、77 个源码快照、
+内嵌引擎、DMG 都在，书库也在。
+
+**丢掉的不是几个脚本，是这个项目的 V 层。** 没有它，任何一次形象改动都只能靠肉眼 ——
+等于把「改一次 → 断言和指纹告诉你有没有改坏」降级成「改一次 → 看一眼 → 祈祷」。
+
+### 规矩
+
+1. **跑得通的东西当场落进项目目录**：`harness/tools/`（脚本）、`harness/tests/`（断言）
+2. `/tmp` 只允许放「这一分钟用完就扔」的中间文件
+3. 测试用的沙箱配置目录（比如把 `configPath` 指过去那种）**可以**放 /tmp，
+   但**生成它的脚本必须在项目里**
+4. 定期自检：`harness/tools/` 里的东西，换个 IP 还能不能直接跑
+
+### 为什么这条特别容易犯
+
+因为「先放 /tmp 试试」是最自然的第一步 —— 不污染项目、不用想放哪儿。
+但验证脚手架不是一次性的，**它是这个项目最值得长期保留的资产**。
+把它当临时文件，是最贵的误判。
+
+---
+
+## ⚠️ zsh 与 bash 的两个差异 —— 都会静默出错
+
+这个项目全程在 zsh 下敲命令，踩过两次，**共同点是都不报错、只是结果不对**。
+
+### ① zsh 数组从 1 开始，bash 从 0
+
+```zsh
+declare -a NAMES=("a" "b" "c")
+echo ${NAMES[0]}     # zsh: 空字符串！bash: "a"
+```
+
+后果：循环少跑一轮、少生成一个文件，而输出看着"正常"。
+**跨 shell 的脚本一律用 `bash script.sh` 跑，或者显式用 `bash -c`。**
+
+### ② zsh 默认不做 word splitting
+
+```zsh
+for spec in "16 icon_16x16"; do set -- $spec; echo $1; done
+# zsh: 输出整串 "16 icon_16x16"；bash: 输出 "16"
+```
+
+后果：这类"按空格拆一行"的写法在 zsh 下静默失效。
+**改用 `while read -r a b; do ... done <<'EOF'`（两种 shell 都对）。**
+
+### ③ 顺带：AppKit 的文字高度给不够会静默裁切
+
+`NSAttributedString.draw(in:)` 的 rect 高度只够一行时，多行文字**只画第一行，其余直接不画**，
+不报错、不警告。排版类脚本里一定要按行数算高度：
+
+```swift
+let lines = s.components(separatedBy: "\n").count
+let h = size * 1.40 * CGFloat(lines)
+```
+
+（`compare_sheet.swift` 第一版就栽在这 —— 图出来了，说明文字少了一半。）
+
+---
+
+## 📎 生产流程现在单独成了一个 skill：`pet-ip-studio`
+
+这份技能是「怎么把这类 app 做出来」的方法论笔记，条目多、按主题散落。
+如果目标是**从头做一只新宠物、或给它改形象/加表情**，直接用 `pet-ip-studio` ——
+它有固定流程、固定命令和验证工具链，比翻这份笔记快得多：
+
+```
+~/.workbuddy/skills/pet-ip-studio/SKILL.md
+```
+
+两者分工：
+- `pet-ip-studio` —— **做事**：七个阶段的流程、参数手册、验证手册、坑清单
+- 本文（`macos-desktop-pet`）—— **备查**：踩坑细节、技术原理、历史决策
+
+验证工具链在项目的 `harness/tools/`（四个工具 + `build.sh`），
+**不要把它们放进 `/tmp`**（放过的都丢了）。
+
+---
+
+## ⚠️ 打 zip 分发：别用命令行 `zip`（中文文件名会在 Windows 上乱码）
+
+macOS 自带的 Info-ZIP `zip` **不给中文文件名设 UTF-8 标志位**
+（general purpose bit 11）。后果：
+
+- 自己 mac 上解压：**正常**
+- 别人 Windows 上解压：**一堆乱码文件名**
+
+这是个典型的「在自己机器上验证不出来」的问题 —— 你测一百遍都是好的。
+
+### 判据
+
+```python
+import zipfile
+zf = zipfile.ZipFile("x.zip")
+ok = all(i.flag_bits & 0x800 for i in zf.infolist())   # False = 有文件会在 Windows 上乱码
+```
+
+### 正确做法
+
+用 Python 的 `zipfile`（非 ASCII 名字会自动设标志位）：
+
+```python
+with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    zf.write(fp, arcname=str(Path(top) / fp.relative_to(src)))
+```
+
+项目里已固化：`dist/make_release.py`。它顺带做了另外三件事 ——
+顶层套一个同名目录（解压后是一个整齐的文件夹，不是一堆散到桌面的文件）、
+跳过 `.DS_Store`/`__pycache__`/`.pyc`、打完打印复核结果。
+
+### 顺带：别用 `try?`（Swift）或忽略返回值的方式收尾
+
+同类问题还有两个，都是「不报错但结果不对」：
+
+- Swift 里 `try? png.write(to:)` 会把「目录不存在」静默吞掉，
+  工具照样打印「已导出」，文件根本没生成
+- 打包脚本里 `[ -n "$x" ] && do_something` 在条件为假时返回非零，
+  开了 `set -e` 的话会**当场终止脚本**（而你以为只是"没找到，跳过"）
+
+---
+
+## ⚠️ Windows 上会崩：`✓` `✗` `⚠` 不在 cp936 里
+
+写脚本给**别的平台**用的时候，最容易漏的不是文件编码，而是**输出流编码**。
+
+`--doctor` 打了 `✓`(U+2713) / `✗`(U+2717) / `⚠`(U+26A0)。这三个：
+
+| 字符 | cp936 | 说明 |
+|---|---|---|
+| `✓` U+2713 | ✗ 崩 | `UnicodeEncodeError: 'gbk' codec can't encode` |
+| `✗` U+2717 | ✗ 崩 | 同上 |
+| `⚠` U+26A0 | ✗ 崩 | 同上 |
+| `·` U+00B7 / `→` U+2192 / `★` U+2605 | ✓ | 这些在 cp936 里有 |
+
+**触发条件很刁钻**：Windows 只有**直接打在真实控制台**时才用 UTF-16；
+一旦是**管道或重定向**，就退回 cp936。而 Agent 调脚本永远是管道 ——
+所以在我们这儿必然触发，在他那儿"手动双击运行"反而不触发。
+**这就是典型的「在自己机器上验证不出来」。**
+
+### 修法（写在脚本顶部）
+
+```python
+def _pin_utf8_output() -> None:
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass          # 流被替换过 / 解释器太老，跳过，不致命
+
+_pin_utf8_output()
+```
+
+两个要点：
+- **`errors="replace"` 不能省** —— 万一还有写不出去的字符，降级成 `?`，
+  绝不抛异常。这类脚本"显示不全"是可接受的，"崩"不是。
+- 顺便解决第二个问题：JSON 里含中文时，若按 cp936 输出，
+  读它的程序按 UTF-8 解就是乱码。
+
+### 怎么验证（关键：用环境变量模拟别的平台）
+
+```bash
+PYTHONIOENCODING=cp936 python3 fetcher.py --doctor > out.txt
+```
+
+`PYTHONIOENCODING` 能强制解释器用指定编码输出，**等于把 Windows 的管道搬到 mac 上**。
+修补前：退出码 1 + Traceback；修补后：退出码 0 + 正常输出。
+—— 这条命令是这类问题的通用验证手法，值得记住。
+
+### 同类清单（写跨平台脚本时逐条过）
+
+| 坑 | 判据 |
+|---|---|
+| 输出流编码 | `PYTHONIOENCODING=cp936` 还能不能跑完 |
+| 文件读写编码 | 每处 `open()` / `read_text()` 有没有显式 `encoding="utf-8"` |
+| 路径拼接 | 用 `pathlib` / `os.path.join`，不要手写 `/` |
+| shell 脚本 | 有没有 `setup.ps1` 对照版；`$VAR` 后面跟中文必须写 `${VAR}` |
+| zip 文件名 | 非 ASCII 名字要设 UTF-8 标志位（命令行 `zip` 不设，用 Python `zipfile`） |
+| 平台专属命令 | `sips` / `iconutil` / `codesign` / `open` / `pbcopy` 都只在 mac 上有 |

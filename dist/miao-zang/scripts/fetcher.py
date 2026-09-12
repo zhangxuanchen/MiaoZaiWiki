@@ -18,6 +18,35 @@ import urllib.error
 from datetime import datetime
 from pathlib import Path
 
+
+def _pin_utf8_output() -> None:
+    """把 stdout / stderr 钉成 UTF-8。**Windows 上不加这段会直接崩。**
+
+    两个独立的坑，都会在 Windows 上咬人：
+
+    1. `--doctor` 会打印 `✓`(U+2713) / `✗`(U+2717) / `⚠`(U+26A0)。
+       **这三个字符都不在 cp936 里**，而 Windows 的管道/重定向输出默认就是 cp936
+       （只有直接打在真实控制台时才走 UTF-16）。所以：
+           Agent 用 subprocess 抓这个脚本的输出  →  编码失败  →  UnicodeEncodeError
+       表现就是"体检跑不起来"，而且报错信息跟真正的问题毫无关系。
+
+    2. `--where` 输出带中文的 JSON。若按 cp936 编码，读它的程序按 UTF-8 解就是乱码 ——
+       在 mac 上一切正常，只有换到 Windows 才发现。
+
+    `errors="replace"` 是第二道保险：万一遇到连 UTF-8 都写不出去的流，
+    降级成一个 `?` 也不要抛异常。这类脚本宁可能显示不全，也不能崩。
+    """
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            # 流被替换过（测试里常见）或解释器太老：不致命，跳过
+            pass
+
+
+_pin_utf8_output()
+
+
 def _platform_user_agent() -> str:
     """按当前系统生成一个像真实浏览器的 UA。
 
@@ -73,6 +102,7 @@ DEFAULT_CONFIG = {
     "root": str(Path.home() / "Documents" / "喵崽书库"),
     "fallback": "收件箱",
     "categories": [
+        # ── 科技 ──────────────────────────────────────
         {
             "name": "AI与Agent",
             "keywords": [
@@ -80,19 +110,30 @@ DEFAULT_CONFIG = {
                 "anthropic", "prompt", "transformer", "embedding", "rag",
                 "机器学习", "深度学习", "推理", "训练", "微调", "对齐", "rlhf",
                 "harness", "上下文", "context", "tool use", "function call",
-                "mcp", "skill", "agentic", "workflow", "评估", "evaluation",
+                "mcp", "agentic", "评估", "evaluation", "智能体",
             ],
         },
         {
-            "name": "编程技术",
+            "name": "编程开发",
             "keywords": [
                 "代码", "编程", "开发", "python", "javascript", "typescript",
-                "java", "swift", "rust", "go ", "c++", "c#", "算法", "架构",
+                "java", "swift", "rust", "golang", "c++", "c#", "算法", "架构",
                 "后端", "前端", "api", "数据库", "linux", "git", "docker",
                 "kubernetes", "性能优化", "debug", "重构", "系统设计", "并发",
-                "分布式", "微服务", "typescript", "react", "vue",
+                "分布式", "微服务", "react", "vue", "sql", "正则",
+                "mysql", "postgres", "sqlite", "redis", "mongodb", "node",
             ],
         },
+        {
+            "name": "数码与硬件",
+            "keywords": [
+                "数码", "手机", "电脑", "笔记本", "耳机", "键盘", "显示器",
+                "相机", "摄像", "无人机", "平板", "智能家居", "评测", "装机",
+                "显卡", "芯片", "固态", "内存", "iphone", "android", "macbook",
+                "ipad", "watch", "充电", "路由器",
+            ],
+        },
+        # ── 商业与工作 ────────────────────────────────
         {
             "name": "产品与商业",
             "keywords": [
@@ -102,10 +143,144 @@ DEFAULT_CONFIG = {
             ],
         },
         {
-            "name": "生活与其他",
+            "name": "金融与投资",
             "keywords": [
-                "生活", "旅行", "美食", "健康", "运动", "读书", "电影", "音乐",
-                "情感", "随笔", "日记", "摄影", "记录",
+                "股票", "基金", "理财", "投资", "股市", "美股", "港股", "通胀",
+                "利率", "宏观", "债券", "黄金", "汇率", "央行", "比特币",
+                "区块链", "财报", "分红", "定投", "资产配置", "复利", "退休金",
+            ],
+        },
+        {
+            "name": "职场与成长",
+            "keywords": [
+                "职场", "面试", "简历", "求职", "晋升", "管理", "领导力",
+                "沟通", "汇报", "团队", "跳槽", "涨薪", "副业", "职业规划",
+                "绩效", "okr", "内耗", "心理", "情绪", "社交", "演讲",
+            ],
+        },
+        {
+            "name": "效率与工具",
+            "keywords": [
+                "效率", "工具", "工作流", "自动化", "笔记", "待办", "日历",
+                "快捷键", "插件", "浏览器", "终端", "编辑器", "清单", "模板",
+                "技巧", "notion", "obsidian", "excel", "表格", "脚本",
+            ],
+        },
+        {
+            "name": "新闻与时事",
+            "keywords": [
+                "新闻", "热点", "时事", "政策", "行业", "趋势", "报告",
+                "大会", "发布会", "争议", "事件", "舆情", "国际", "解读",
+            ],
+        },
+        # ── 创作与设计 ────────────────────────────────
+        {
+            "name": "设计与审美",
+            "keywords": [
+                "设计", "ui", "ux", "交互", "视觉", "配色", "字体", "排版",
+                "logo", "插画", "审美", "灵感", "创意", "平面", "figma",
+                "动效", "品牌", "海报",
+            ],
+        },
+        {
+            "name": "读书与写作",
+            "keywords": [
+                "读书", "书摘", "读后感", "书评", "读完", "作者", "小说",
+                "文学", "散文", "诗歌", "写作", "文笔", "摘抄", "选题",
+                "公众号", "博客", "文风", "书单",
+            ],
+        },
+        {
+            "name": "影视与音乐",
+            "keywords": [
+                "电影", "影片", "剧集", "电视剧", "美剧", "纪录片", "综艺",
+                "影评", "导演", "演员", "演唱会", "音乐", "专辑", "歌单",
+                "乐评", "吉他", "钢琴", "歌", "追剧",
+            ],
+        },
+        {
+            "name": "游戏与电竞",
+            "keywords": [
+                "游戏", "steam", "主机", "ps5", "switch", "xbox", "手游",
+                "网游", "电竞", "游戏攻略", "手办", "独立游戏", "游戏设计",
+                "策划", "玩家", "单机",
+            ],
+        },
+        # ── 学习与学术 ────────────────────────────────
+        {
+            "name": "教育与学习",
+            "keywords": [
+                "学习", "考试", "考研", "高考", "英语", "单词", "课程", "网课",
+                "留学", "雅思", "托福", "记忆", "费曼", "刻意练习", "教程",
+                "入门", "手把手", "自 学", "自学",
+            ],
+        },
+        {
+            "name": "学术与论文",
+            "keywords": [
+                "论文", "期刊", "文献", "arxiv", "引用", "研究方法", "学术",
+                "审稿", "开题", "综述", "导师", "研究生", "博士", "课题",
+            ],
+        },
+        {
+            "name": "科学与科普",
+            "keywords": [
+                "科学", "物理", "化学", "生物", "数学", "天文", "宇宙", "基因",
+                "量子", "大脑", "神经", "进化", "海洋", "气候", "能源",
+                "科普", "实验", "研究", "自然",
+            ],
+        },
+        {
+            "name": "历史与人文",
+            "keywords": [
+                "历史", "哲学", "文化", "考古", "文物", "博物馆", "古代",
+                "朝代", "二战", "战争", "思想", "社会学", "人类学", "民俗",
+                "传统", "文明",
+            ],
+        },
+        # ── 生活方式 ──────────────────────────────────
+        {
+            "name": "健康与运动",
+            "keywords": [
+                "健康", "健身", "跑步", "力量训练", "瑜伽", "游泳", "减脂",
+                "增肌", "饮食", "睡眠", "熬夜", "体检", "就医", "用药",
+                "颈椎", "近视", "拉伸", "有氧",
+            ],
+        },
+        {
+            "name": "美食与烹饪",
+            "keywords": [
+                "美食", "菜谱", "烹饪", "烘焙", "咖啡", "做饭", "厨房", "餐厅",
+                "探店", "小吃", "火锅", "烧烤", "食材", "调料", "下厨",
+            ],
+        },
+        {
+            "name": "旅行与户外",
+            "keywords": [
+                "旅行", "旅游", "旅行攻略", "签证", "酒店", "民宿", "机票",
+                "徒步", "露营", "登山", "自驾游", "景点", "出行", "行李",
+                "护照", "门票", "游记",
+            ],
+        },
+        {
+            "name": "家居与生活",
+            "keywords": [
+                "装修", "家居", "收纳", "家电", "租房", "搬家", "园艺",
+                "花草", "宠物", "猫", "狗", "清洁", "好物", "家具", "生活",
+            ],
+        },
+        {
+            "name": "时尚与穿搭",
+            "keywords": [
+                "穿搭", "时尚", "美妆", "护肤", "化妆", "口红", "香水",
+                "发型", "服装", "潮流", "风格", "显瘦", "购物", "种草", "衣",
+            ],
+        },
+        {
+            "name": "生活与随笔",
+            "keywords": [
+                "情感", "随笔", "日记", "家庭", "婚恋", "朋友", "成长",
+                "感悟", "碎碎念", "记录", "心情", "故事",
             ],
         },
     ],
@@ -179,29 +354,70 @@ def safe_filename(name: str, max_len: int = 50) -> str:
     return name[:max_len]
 
 
-def classify(title: str, body: str, categories, fallback=None):
+# ── 分类 ───────────────────────────────────────────────────
+# 「分层加权关键词匹配」：把文章切成 标题 / 摘要 / 大纲 / 正文 四层信号，
+# 各层按可信度加权 —— 作者亲手写的标题、摘要最能代表主题，正文只是佐证。
+# 不用分词、不用模型：命中即得分，结果确定、毫秒级、可手算。
+
+# 每层权重：标题 ×5 > 摘要 ×3 > 大纲 ×2 > 正文 ×1
+_SEG_WEIGHTS = {"title": 5, "summary": 3, "outline": 2, "body": 1}
+_KW_CAP = 5        # 单个关键词最多计 5 次 —— 防止一个词刷爆整篇
+_KIND_BONUS = 2    # 每命中一个**不同的**关键词额外加分 —— 命中面广的更"像"
+
+
+def _kw_hits(text: str, kw: str) -> int:
+    """一个关键词在一段文本里命中几次。
+
+    含英文字母/数字的词按**单词边界**匹配（"go" 不会误伤 "google"，
+    "c++" 不会匹配 "abc++"）；纯中文/短语按子串匹配。整体大小写不敏感。
+    """
+    kw = kw.lower().strip()
+    if not kw or not text:
+        return 0
+    if re.search(r"[a-z0-9]", kw[0]) or re.search(r"[a-z0-9]", kw[-1]):
+        pat = r"(?<![a-z0-9])" + re.escape(kw) + r"(?![a-z0-9])"
+        return len(re.findall(pat, text))
+    return text.count(kw)
+
+
+def _seg_score(text: str, keywords) -> int:
+    """一段文本对一个词表的得分：Σ min(次数, 上限) + 命中种类数 × 种类分"""
+    total, kinds = 0, 0
+    for kw in keywords:
+        n = min(_kw_hits(text, kw), _KW_CAP)
+        if n:
+            total += n
+            kinds += 1
+    return total + kinds * _KIND_BONUS
+
+
+def classify(title: str, body: str, categories, fallback=None, summary="", outline=()) -> str:
+    """给文章定类目。全 0 分（一个词都不沾）落 fallback（兜底，不是失败）。
+
+    summary / outline 可选：抓网页链路传 og:description 和 h1-h3 大纲，
+    手动笔记没有就不传（它们是最浓缩的主题信号，值得单独加权）。
+    """
     # 兜底类名由调用方传（这样用户在 .miao-zang.json 里改了 fallback 才真的生效）
     fb = fallback or DEFAULT_CONFIG["fallback"]
     if not categories:
         return fb
-    text = (title + " " + title + " " + body).lower()  # 标题权重 ×2
+    segs = (
+        (_SEG_WEIGHTS["title"],   title or ""),
+        (_SEG_WEIGHTS["summary"], summary or ""),
+        (_SEG_WEIGHTS["outline"], " ".join(outline or ())),
+        (_SEG_WEIGHTS["body"],    (body or "")[:6000]),   # 正文只看前 6000 字：够定性，大文档也不空转
+    )
     scores = []
     for cat in categories:
-        kw = cat.get("keywords", [])
+        kw = [k for k in (c.strip() for c in cat.get("keywords", [])) if k]
         if not kw:
             continue
         s = 0
-        for k in kw:
-            kk = k.lower().strip()
-            if not kk:
-                continue
-            # 单词/短语计数
-            try:
-                s += text.count(kk)
-            except Exception:
-                pass
+        for w, text in segs:
+            if text:
+                s += w * _seg_score(text.lower(), kw)
         scores.append((s, cat["name"]))
-    # ⚠️ 这里比的是 (分数, 类名) 元组 —— 所以**分数相同时按类名的字符编码从大到小**决胜。
+    # ⚠️ 这里比的是 (分数, 类名) 元组 —— 分数相同时按类名的字符编码从大到小决胜。
     # 这是个隐藏耦合：改分类名字会改变平票结果。详见 references/classify.md。
     scores.sort(reverse=True)
     if scores and scores[0][0] > 0:
@@ -633,9 +849,13 @@ def process(url: str, cfg):
     if len(plain) < 60:
         return {"ok": False, "error": "正文太短，抓不出内容", "title": title, "url": url}
 
-    category = classify(title, plain, cfg.get("categories", []), cfg.get("fallback"))
-    lead, points = make_digest(title, get_description(html), plain)
+    # 摘要（og:description）和大纲（h1-h3）先算出来：既给 digest 用，
+    # 也是分类里权重仅次于标题的两层信号 —— 人手写的主旨句比正文可信得多。
+    description = get_description(html)
     outline = markdown_outline(md_probe)
+    category = classify(title, plain, cfg.get("categories", []), cfg.get("fallback"),
+                        summary=description, outline=outline)
+    lead, points = make_digest(title, description, plain)
 
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     date_str = datetime.now().strftime("%Y-%m-%d")

@@ -152,8 +152,21 @@ cp "$DEPLOY_DIR/${EXEC_NAME}" "$APP_BUNDLE/Contents/MacOS/${EXEC_NAME}"
 cp "$SRC_DIR/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 
 # 应用图标：从 appicon.png（1024 母版）生成 AppIcon.icns。
-# 母版由 make_appicon.swift 从 appicon_source.png 合成 —— 改图只改源图，重跑那个脚本即可。
+# 母版由 make_appicon.swift 从 appicon_source.png 合成 —— 改图只改源图即可。
 # 10.13+ 的 sips 能直接缩，iconutil 负责把 .iconset 打成 .icns（都是系统自带，无额外依赖）。
+# 母版缺失但有源图时现场合成一份 —— 不然每次重建 .app 都会"跳过图标"，
+# 装出来的应用永远是系统默认白图（这个坑踩过）。
+if [ ! -f "$SRC_DIR/appicon.png" ] && [ -f "$SRC_DIR/appicon_source.png" ]; then
+  echo "==> 合成图标母版 appicon.png（从 appicon_source.png）"
+  TMPICON="$(mktemp -d)"
+  if ( cd "$SRC_DIR" && swiftc -O -o "$TMPICON/mkicon" make_appicon.swift >/dev/null 2>&1 \
+       && "$TMPICON/mkicon" "$SRC_DIR" >/dev/null 2>&1 ); then
+    echo "   ✓ 母版已生成"
+  else
+    echo "   ⚠️ 母版合成失败，继续用旧的（如果有）"
+  fi
+  rm -rf "$TMPICON"
+fi
 if [ -f "$SRC_DIR/appicon.png" ]; then
   echo "==> 生成应用图标 AppIcon.icns"
   ICONSET="$(mktemp -d)/AppIcon.iconset"

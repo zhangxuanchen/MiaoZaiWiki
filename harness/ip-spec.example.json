@@ -1,0 +1,201 @@
+{
+  "_readme": {
+    "what": "喵藏 · IP 规格模板。把形象从代码里抽出来之后的形态 —— 换 IP = 换一份这个文件，不用改 Swift。",
+    "status": "目标形态。现在这些值还是硬编码在 main.swift 的 7 个 Swift 枚举里，本文件是改造时的 schema 与对照表。",
+    "how_to_read": "以 _ 开头的键是说明，实际使用时忽略。值是**从现有代码里抄出来的真值**，不是示意。",
+    "tuning_hint": "每个 IP 真正需要重做的只有两处：palette（决定气质）和 meta（名字）。其余维度建议沿用 —— 猫的骨架不该每个 IP 重画一遍。"
+  },
+
+  "meta": {
+    "ip": "喵藏",
+    "specVersion": 1,
+    "defaultLook": 0,
+    "defaultEye": 0,
+    "defaultEyeColor": 0,
+    "_note": "default* 是出厂默认档。改这里等于改所有新用户的初始形象。"
+  },
+
+  "geometry": {
+    "_note": "画布与头身比例。这套值决定了'猫长什么样'的骨架 —— 影响所有部件的位置。换 IP 时**不建议改**，改了要重调每一个 draw 函数。",
+    "canvasW": 186,
+    "canvasH": 205,
+    "catScale": 1.0,
+    "_hint": "catScale 是 draw() 里那层整体缩放。改它会让所有硬编码的像素阈值失效（踩过：断言按 headC 推算坐标，漏了这层，算出来 84 实际 54）。"
+  },
+
+  "palette": [
+    {
+      "_what": "配色主题。**这是每个 IP 最该重新设计的一环** —— 决定第一眼的气质。",
+      "name": "奶白",
+      "_design_note": "奶油底 + 暖棕耳尾 + 金黄领巾。名字就是第一眼看到的颜色。",
+      "fur": [0.985, 0.960, 0.915],
+      "furLight": [1.000, 0.990, 0.970],
+      "furShadow": [0.930, 0.900, 0.855],
+      "furDark": [0.860, 0.825, 0.775],
+      "furLit": [1.000, 0.985, 0.960],
+      "furDeep": [0.945, 0.915, 0.870],
+      "patch": [0.790, 0.716, 0.636],
+      "patchLit": [0.870, 0.804, 0.730],
+      "patchDk": [0.652, 0.572, 0.492],
+      "bandana": [0.965, 0.790, 0.290],
+      "bandanaDk": [0.870, 0.670, 0.190],
+      "eyeL": [0.555, 0.605, 0.205],
+      "eyeR": [0.555, 0.605, 0.205],
+      "pink": [0.980, 0.720, 0.720],
+      "pinkDeep": [0.945, 0.575, 0.590],
+      "pinkLit": [0.990, 0.800, 0.800],
+      "blush": [0.985, 0.700, 0.720, 0.55],
+      "tongue": [0.955, 0.600, 0.615],
+      "outline": [0.290, 0.175, 0.110],
+      "outlineDk": [0.215, 0.120, 0.075],
+      "dark": [0.150, 0.105, 0.085]
+    },
+    {
+      "name": "橘猫",
+      "_design_note": "整只橘，耳尾压深一档的橘棕，配蓝领巾（橘的补色）最跳。眼用草绿。",
+      "_values": "见 main.swift · LOOKS[1]"
+    },
+    {
+      "name": "蓝猫",
+      "_design_note": "冷蓝灰 + 石板色耳尾，用暖珊瑚领巾把冷色提起来。眼用薄荷青（**刻意不用金黄** —— 跟参考图的棕黄太近）。",
+      "_values": "见 main.swift · LOOKS[2]"
+    },
+    {
+      "name": "第 4 套",
+      "_values": "见 main.swift · LOOKS[3]",
+      "_hint": "换 IP 时通常是**整套重做**：定一个主色 + 一个补色，耳尾压深一档，领巾用补色跳出来。这套逻辑抄「橘猫」那条。"
+    }
+  ],
+
+  "eyeShape": {
+    "_note": "眼型。前 3 个是眼形（改眼眶几何），后 6 个是配件（盖在眼睛上的装饰）。",
+    "_internal_rule": "瞳孔和高光**不单独调** —— 它们按 squashY / stretchX 的比例跟着眼眶走。加新眼形时只要给这两个系数，内部元素自动适配。",
+    "shapes": [
+      { "case": "flat",   "name": "扁眼", "squashY": 0.58, "stretchX": 1.00 },
+      { "case": "round",  "name": "圆眼", "squashY": 0.94, "stretchX": 1.00 },
+      { "case": "narrow", "name": "细长", "squashY": 0.40, "stretchX": 1.06 }
+    ],
+    "accessories": [
+      { "case": "shades",      "name": "墨镜" },
+      { "case": "heartShades", "name": "心形镜" },
+      { "case": "starShades",  "name": "星星镜" },
+      { "case": "glasses",     "name": "圆眼镜" },
+      { "case": "monocle",     "name": "单片镜" },
+      { "case": "patch",       "name": "眼罩" }
+    ],
+    "_accessory_hint": "配件不参与 squashY（它们不画眼眶）。加配件 = 加一个 case + 一段绘制分支，不动眼形那三个。"
+  },
+
+  "eyeColor": {
+    "_note": "瞳色。auto = 跟配色走（用 palette.eyeL/eyeR），其余是固定色。",
+    "_ordering_rule": "⚠️ **新档一律追加在数组末尾**。下标会落进用户配置，插在中间会让已有用户的瞳色串位。",
+    "_design_constraint": "异色瞳那三组只用绿/青/紫/粉 —— 跟参考图的两个色系（左灰蓝 ~205° / 右棕金 ~38°）色相都拉开 ≥28°。这是差异化改造的硬约束，加新色时也要守。",
+    "colors": [
+      { "case": "auto",     "name": "跟形象", "rgb": null },
+      { "case": "emerald",  "name": "翡翠" },
+      { "case": "olive",    "name": "橄榄" },
+      { "case": "grass",    "name": "草绿" },
+      { "case": "mint",     "name": "薄荷" },
+      { "case": "sky",      "name": "晴空蓝" },
+      { "case": "deepSea",  "name": "深海蓝" },
+      { "case": "violet",   "name": "紫罗兰" },
+      { "case": "sakura",   "name": "樱花粉" },
+      { "case": "amber",    "name": "琥珀" },
+      { "case": "brick",    "name": "砖红" },
+      { "case": "cocoa",    "name": "咖啡" },
+      { "case": "graphite", "name": "石墨" },
+      { "case": "duoJadeSakura",   "name": "翡翠·樱花粉", "pair": ["jade", "sakura"] },
+      { "case": "duoVioletMint",   "name": "紫罗兰·薄荷", "pair": ["violet", "mint"] },
+      { "case": "duoGrassViolet",  "name": "草绿·紫罗兰", "pair": ["grass", "violet"] },
+      { "case": "white",     "name": "白",   "_hint": "中性色。白瞳会让白色高光消失，所以高光按亮度切了冷灰版（lum>0.94）。" },
+      { "case": "lightGray", "name": "淡灰" }
+    ]
+  },
+
+  "bib": {
+    "_note": "围兜形状。名字**不用手调位置** —— 直接居中在围兜路径的 bounds 里（早先是手写数字，尖角兜会把字顶到领口上）。",
+    "styles": [
+      { "case": "square",  "name": "方兜" },
+      { "case": "point",   "name": "尖兜" },
+      { "case": "round",   "name": "圆兜" },
+      { "case": "scallop", "name": "花边兜" }
+    ]
+  },
+
+  "ear": {
+    "_note": "耳朵形状。几何是一组比例系数（相对耳心）。",
+    "styles": [
+      { "case": "sharp", "name": "尖耳", "scaleW": 1.00, "scaleH": 1.00, "spread": 0, "tipKX": 0.00, "tipKY": 0.72, "round": 0.00 },
+      { "case": "round", "name": "圆耳", "scaleW": 1.00, "scaleH": 1.00, "spread": 0, "tipKX": 0.00, "tipKY": 0.62, "round": 1.00 },
+      { "case": "fold",  "name": "折耳", "scaleW": 1.00, "scaleH": 1.00, "spread": 0, "tipKX": 0.30, "tipKY": 0.36, "round": 0.25 },
+      { "case": "big",   "name": "大耳", "scaleW": 1.30, "scaleH": 1.24, "spread": 3, "tipKX": 0.00, "tipKY": 0.66, "round": null }
+    ],
+    "_constraint": "裁剪框是按**最大那款耳（big）**算的。加比 big 更大的耳型时，必须同步放大裁剪框，否则头像里的耳尖会被切掉。"
+  },
+
+  "tail": {
+    "_note": "尾巴。骨架点用 Catmull-Rom 串成平滑曲线，点是相对**头心**的偏移。",
+    "styles": [
+      {
+        "case": "up", "name": "上翘",
+        "_frozen": "⭐ 这是默认档，四个点一个数都不能动 —— 改了会让所有老用户的渲染指纹变化。",
+        "spine": [[10, -50], [66, -74], [92, -26], [84, 16]]
+      },
+      {
+        "case": "curl", "name": "卷尾",
+        "_design_note": "甩出去后卷回来，尾尖朝内（真猫放松时最爱这个姿势）",
+        "spine": [[10, -48], [62, -74], [96, -30], [80, 8], [46, 0]]
+      },
+      {
+        "case": "long", "name": "长尾",
+        "_design_note": "更长更高，走一个大 S",
+        "spine": [[8, -56], [46, -100], [90, -84], [106, -30], [96, 22]]
+      },
+      {
+        "case": "fluffy", "name": "蓬松",
+        "_design_note": "短而粗的一团，骨架接近默认但收得早",
+        "spine": [[12, -46], [56, -68], [80, -28], [72, 10]]
+      },
+      {
+        "case": "stub", "name": "短尾",
+        "_design_note": "像日本短尾猫，小小一截",
+        "spine": [[16, -44], [40, -58], [56, -36], [52, -12]]
+      }
+    ],
+    "_width_rule": "半宽 = base + extra · (1−u)^power（u 从尾根到尾尖）。加新尾巴时给 spine 就能看效果，宽度先沿用默认那组。"
+  },
+
+  "mouth": {
+    "_note": "嘴形。这是一套完整的贝塞尔参数 —— cw 是嘴宽基准，s 是缩放。",
+    "base": {
+      "philTop": 6.5,
+      "lipY": 1.0,
+      "philW": 2.4,
+      "spread": 0.72,
+      "drop": 2.6,
+      "c1x": 0.26, "c1y": 2.4,
+      "c2x": 0.52, "c2y": 4.0,
+      "lobeW": 3.0,
+      "hasLower": true,
+      "lowHalf": 4.6, "lowY": 4.6,
+      "lowCx": 2.0, "lowCy": 8.0,
+      "lowW": 2.4,
+      "openWide": 1.0, "openDeep": 1.0
+    },
+    "_unit_rule": "单位混用要注意：spread / c1x / c2x 是 ×cw 的**倍率**；drop / c1y / lobeW / lowHalf 这些是 ×s 的**绝对量**。这是踩过坑才写清楚的。",
+    "styles": [
+      { "case": "three", "name": "三瓣嘴", "_frozen": "默认档，全部用 base 值，一个数没重写", "geo": "＝ base" },
+      { "case": "wide",  "name": "阔嘴" },
+      { "case": "small", "name": "小嘴" },
+      { "case": "droop", "name": "垂唇" },
+      { "case": "flat",  "name": "一字唇", "_design_note": "唇叶拉平成一条横线（spread 0.88 / drop 0.0），下唇去掉" }
+    ],
+    "_idle_motion": {
+      "_note": "待机微动，不是独立档位而是叠加项。三个通道周期互质，凑不出规律。",
+      "breath": { "period": 4.6, "amplitude": "整张嘴浮沉 < 1px" },
+      "press":  { "period": 7.5, "effect": "嘴角往外抻一点 + 唇叶压平" },
+      "gape":   { "period": 11.3, "effect": "微微张开，透出一点舌头色（不是画深色缝 —— 深色跟描边同色，量不出来）" },
+      "_invariant": "零值必须走 IEEE754 精确恒等（x+0.0 / x*1.0），这样关掉微动时表达式求值与原来**逐位相同**，默认档不用复制一份代码。"
+    }
+  }
+}

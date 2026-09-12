@@ -29,6 +29,7 @@
 
 **正常情况下不会乱码** —— 脚本里所有文件读写都显式写了 `encoding="utf-8"`，
 不依赖系统默认编码（Windows 默认是 cp936，是最常见的坑，这里已经绕开了）。
+**输出流也在脚本启动时就钉成了 UTF-8**（见下面「输出编码」）。
 
 如果**还是**看到乱码：
 
@@ -37,6 +38,48 @@
    转成 utf-8 再 `--rescan`。
 3. 乱码出现在**终端输出**里（Windows 的 cmd 老代码页）→
    先 `chcp 65001` 切到 UTF-8，或者换 PowerShell / Windows Terminal。
+   （脚本自己会输出 UTF-8，但老 cmd 显示端才不管这个。）
+
+## ⚠️ 输出编码：Windows 上曾经会直接崩（已修）
+
+这是一个「在 mac 上永远测不出来」的坑，值得单独讲。
+
+`--doctor` 会打印 `✓` / `✗` / `⚠` 这类符号。**这三个都不在 cp936 里**：
+
+```
+✓ (U+2713)  cp936 → ✗ 编码失败
+✗ (U+2717)  cp936 → ✗ 编码失败
+⚠ (U+26A0)  cp936 → ✗ 编码失败
+· (U+00B7)  cp936 → ✓ 可以
+→ (U+2192)  cp936 → ✓ 可以
+```
+
+而 Windows 的管道 / 重定向输出**默认就是 cp936**（只有直接打在真实控制台时才走
+UTF-16 的 `WriteConsoleW`）。所以：
+
+> Agent 用 subprocess 抓这个脚本的输出 → 拿到的是管道 → cp936 → **`UnicodeEncodeError`，整个 `--doctor` 直接崩**
+
+报错长这样，跟真正的问题毫无关系，很容易被当成「脚本坏了」：
+
+```
+UnicodeEncodeError: 'gbk' codec can't encode character '\u2713' in position 2: illegal multibyte sequence
+```
+
+**现状：已修**。脚本启动时会把 stdout / stderr 强制 `reconfigure(encoding="utf-8",
+errors="replace")`。两个作用 ——
+
+- 输出永远是 UTF-8：`--where` 打的 JSON 含中文，读它的程序按 UTF-8 解才不会乱码
+- `errors="replace"` 兜底：万一还有写不出去的字符，降级成一个 `?`，**绝不抛异常**
+
+**版本要求**：这段用的是 `TextIOWrapper.reconfigure`，需要 **Python 3.7+**。
+更老的版本会被 `try/except` 静默跳过（退回到旧行为，不崩，但可能显示不全）。
+
+**如果你拿到的是修补前的版本**，临时绕过办法：
+
+```
+set PYTHONIOENCODING=utf-8      :: cmd
+$env:PYTHONIOENCODING="utf-8"   # PowerShell
+```
 
 ## Windows 专区
 
@@ -46,6 +89,9 @@
 | `setup.ps1` 拒绝运行（about_Execution_Policies） | PowerShell 默认执行策略 | 用 `powershell -ExecutionPolicy Bypass -File setup.ps1` |
 | 路径带空格报错 | 没加引号 | 一律用双引号把路径包起来 |
 | `~` 不展开 | Windows 的 shell 不认 `~` | 写完整路径，比如 `C:\Users\me\Documents\喵藏书库` |
+| `UnicodeEncodeError: 'gbk' codec can't encode …` | cp936 装不下 `✓`/`✗`/`⚠` | 见上一节；修补后的版本不会出现 |
+| 输出里中文变问号 | 老 cmd 的显示代码页 | `chcp 65001` 或换 Windows Terminal |
+
 
 ## 书库相关的坑
 

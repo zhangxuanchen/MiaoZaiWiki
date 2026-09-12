@@ -22,7 +22,7 @@ ROOT="$(cd "$HERE/.." && pwd)"
 APP_NAME="${MIAOZANG_APP_NAME:-喵藏}"
 EXEC_NAME="${MIAOZANG_EXEC_NAME:-MiaoZang}"
 APP_ID="${MIAOZANG_APP_ID:-com.miaozang.app}"
-VERSION="${MIAOZANG_VERSION:-1.0.0}"
+VERSION="${MIAOZANG_VERSION:-1.1.0}"
 ENGINE="${MIAOZANG_ENGINE:-$HERE/.engine}"
 RELEASE="$HERE/release"
 STAGE="$HERE/.stage"
@@ -36,6 +36,12 @@ die() { printf '✗ %s\n' "$*" >&2; exit 1; }
     say "引擎还没构建，先跑 make_engine.sh（约 1 分钟）…"
     bash "$HERE/make_engine.sh" "$ENGINE"
 }
+# 引擎目录是缓存——但 fetcher.py 必须永远跟项目根的最新版走：
+# 上次改完分类词表重新打包，引擎里还是旧词表，就是漏了这一步。
+if [ "$ROOT/fetcher.py" -nt "$ENGINE/fetcher.py" ]; then
+    cp "$ROOT/fetcher.py" "$ENGINE/fetcher.py"
+    say "   ↻ 引擎里的 fetcher.py 已同步为项目最新版"
+fi
 
 # ── ② 编译 ──
 # 注意：用**相对路径**编译。传绝对路径的话，编译期嵌进二进制的文件名会是

@@ -17,7 +17,7 @@
 
 ### macOS：一键装（推荐）
 
-下载 **`dist/release/喵藏-1.0.0.dmg`**，双击打开，把 **喵藏.app** 拖进「应用程序」：
+到 [**Releases 页面**](https://github.com/zhangxuanchen/MiaoZaiWiki/releases) 下载 **`喵藏-1.0.0.dmg`**，双击打开，把 **喵藏.app** 拖进「应用程序」：
 
 ```
 打开 DMG → 拖 喵藏.app 到 应用程序 → 双击启动

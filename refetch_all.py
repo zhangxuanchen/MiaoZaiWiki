@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-喵崽一键重抓（refetch_all.py）
+喵藏一键重抓（refetch_all.py）
 扫描 ~/.catpet/.catalog.json，对每条 item：
   1. 本地有 .html → 直接用本地 HTML 重新抽 md，覆盖写回（不联网，最快）
   2. 本地无 .html 但有 .md → 联网重抓 HTML，存 .html + 重抽 md
@@ -180,7 +180,7 @@ def refetch_one(item, root, dry_run=False):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="喵崽一键重抓")
+    ap = argparse.ArgumentParser(description="喵藏一键重抓")
     ap.add_argument("--dry-run", action="store_true", help="只看不写")
     args = ap.parse_args()
 

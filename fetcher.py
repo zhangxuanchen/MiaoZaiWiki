@@ -15,6 +15,7 @@ import sys
 import traceback
 import urllib.request
 import urllib.error
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 
@@ -99,7 +100,7 @@ def config_candidates(root_hint=None) -> list:
     return out
 
 DEFAULT_CONFIG = {
-    "root": str(Path.home() / "Documents" / "喵崽书库"),
+    "root": str(Path.home() / "Documents" / "喵藏书库"),
     "fallback": "收件箱",
     "categories": [
         # ── 科技 ──────────────────────────────────────
@@ -582,9 +583,14 @@ def _download_image(url: str, save_dir: Path, idx: int) -> str:
     失败返回 ''（调用方会 fallback 到原 URL）。"""
     try:
         save_dir.mkdir(parents=True, exist_ok=True)
+        # Referer 取这张图**自己站点的同源地址** —— 不少图床 / CDN 会校验防盗链，
+        # 不带 Referer 就拿不到图。但不要写死成某个具体站点：那等于对特定平台
+        # 伪装来源，既没必要（同源同样能过防盗链），也把一个通用工具绑死了。
+        _p = urllib.parse.urlsplit(url)
+        _referer = "%s://%s/" % (_p.scheme, _p.netloc) if _p.netloc else ""
         req = urllib.request.Request(url, headers={
             "User-Agent": UA,
-            "Referer": "https://mp.weixin.qq.com/",
+            "Referer": _referer,
         })
         with urllib.request.urlopen(req, timeout=15) as resp:
             data = resp.read()
@@ -608,7 +614,8 @@ def extract_markdown(html, img_dir=None):
     """抽取 markdown，保留图按文中位置 + mermaid。
     策略：BeautifulSoup 在主内容容器（#js_content 或 <article>）内按 DOM
     顺序逐节点遍历，输出段落/标题/列表/代码块/图片/引用 → 图片回到原文位置。
-    若指定 img_dir，同时下载图到本地（绕过微信防盗链）。
+    若指定 img_dir，同时把图下载到本地（请求会带上「该图所在站点」的 Referer，
+    用于应对部分图床的防盗链校验 —— 这是通用做法，不针对某个平台）。
     """
     from bs4 import BeautifulSoup, NavigableString
 

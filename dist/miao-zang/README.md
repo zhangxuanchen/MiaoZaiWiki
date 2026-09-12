@@ -53,6 +53,7 @@ printf '%s' "随手记一条" | .venv/bin/python3 fetcher.py --root ~/Documents/
 miao-zang/
 ├── SKILL.md                    给 Agent 看的说明书（也是这份技能的主体）
 ├── README.md                   你现在看的这个
+├── DISCLAIMER.md               功能与安全风险说明（合规材料，分发时别删）
 ├── scripts/
 │   ├── fetcher.py              引擎：抓取 / 分类 / 落盘 / 索引（只用标准库也能跑一半）
 │   ├── setup.sh / setup.ps1    一键建虚拟环境 + 装依赖

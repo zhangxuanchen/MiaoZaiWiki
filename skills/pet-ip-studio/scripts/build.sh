@@ -15,7 +15,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 
-TOOLS=(fingerprint render_sheet verify export_spec)
+TOOLS=(fingerprint render_sheet verify export_spec make_cats)
 
 echo "喵藏 · 构建验证工具"
 echo "────────────────────────────────────────"

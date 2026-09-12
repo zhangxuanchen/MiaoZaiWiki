@@ -69,6 +69,7 @@ Agent：好，先定三件事：
 ```
 pet-ip-studio/
 ├── SKILL.md              给 Agent 的流程说明书
+├── DISCLAIMER.md         功能与风险说明（合规材料，分发时别删）
 ├── references/           参数手册 · 验证手册 · 坑清单
 ├── assets/
 │   ├── PetApp.swift      ★ 模板 app（一份跑通的完整实现，4872 行）
@@ -80,6 +81,7 @@ pet-ip-studio/
     ├── build.sh · mkhead.py · common.swift
     ├── fingerprint.swift · render_sheet.swift
     ├── verify.swift · export_spec.swift · compare_sheet.swift
+    ├── make_cats.swift    出吸粉卡（4 张竖版宣传图）
     └── baseline.txt
 ```
 

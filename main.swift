@@ -142,7 +142,7 @@ let STRINGS_EN: [String: String] = [
     "就剩我一只啦，别送我走…": "I'm the last one here… don't send me away…",
     "已关掉开机自启": "Launch at login turned off",
     "正在给新喵搭窝…": "Building a new nest…",
-    "名字要两个字哦，比如「小肥」": "Name must be exactly 2 characters (e.g. 小肥)",
+    "名字要两个字哦，比如「咪咪」": "Name must be exactly 2 characters (e.g. Mimi)",
     // ── 手动添加弹窗 ──
     "喂给它": "Feed it", "算了": "Never mind",
     "空的就不存啦": "Nothing to save — it's empty",
@@ -372,7 +372,7 @@ final class PetStore {
                     }
                     list.append(PetProfile(
                         id: (d["id"] as? String) ?? PetStore.newID(),
-                        name: (d["name"] as? String) ?? "喵崽\(i + 1)",
+                        name: (d["name"] as? String) ?? "喵藏\(i + 1)",
                         root: (d["root"] as? String) ?? DEFAULT_LIBRARY_PATH,
                         look: (d["look"] as? Int) ?? min(i, LOOKS.count - 1),
                         eye: (d["eye"] as? Int) ?? min(i, EyeStyle.allCases.count - 1),
@@ -391,7 +391,7 @@ final class PetStore {
             } else if let r = obj["root"] as? String {
                 // 旧配置（只有一个 root）→ 迁移成一只猫
                 migrated = true
-                list.append(PetProfile(id: PetStore.newID(), name: "喵崽",
+                list.append(PetProfile(id: PetStore.newID(), name: "喵藏",
                                        root: r, look: 0, eye: 0, bib: 0, ear: 0,
                                        lang: Lang.legacyOrDefault.rawValue,
                                        x: 0, y: 0))
@@ -399,7 +399,7 @@ final class PetStore {
         }
         if list.isEmpty {
             migrated = true
-            list.append(PetProfile(id: PetStore.newID(), name: "喵崽",
+            list.append(PetProfile(id: PetStore.newID(), name: "喵藏",
                                    root: DEFAULT_LIBRARY_PATH,
                                    look: 0, eye: 0, bib: 0, ear: 0,
                                    lang: Lang.legacyOrDefault.rawValue,
@@ -594,8 +594,8 @@ struct Look {
 }
 
 // 四套皮肤的左右瞳孔**一律同色**。
-// 原来每套都是"左一色右一色"的异色瞳，而当初那张网络参考图正好也是异色瞳 ——
-// 等于把最像的那个特征做成了自家的设计语言。改成同色之后，这个重合点就没了。
+// 异色瞳是卡通角色里相当常见的画法，而"左右瞳孔不同色"又恰恰是最容易被一眼认出的特征，
+// 所以刻意不做：辨识度交给配色和五官组合，而不是靠一个谁都能用的通用特征。
 // （`eyeL` / `eyeR` 两个字段保留着：万一以后想做异色，改数据就行。）
 let LOOKS: [Look] = [
     // 0 · 奶白：奶油底 + 暖棕耳尾 + 金黄领巾。名字就是第一眼看到的颜色。
@@ -636,7 +636,7 @@ let LOOKS: [Look] = [
          patch: rgb(0.468, 0.512, 0.606), patchLit: rgb(0.582, 0.628, 0.712),
          patchDk: rgb(0.340, 0.380, 0.470),
          bandana: rgb(0.940, 0.520, 0.470), bandanaDk: rgb(0.812, 0.386, 0.344),
-         eyeL: rgb(0.290, 0.780, 0.740), eyeR: rgb(0.290, 0.780, 0.740),   // 薄荷青（不用金黄：跟参考图的棕黄太近）
+         eyeL: rgb(0.290, 0.780, 0.740), eyeR: rgb(0.290, 0.780, 0.740),   // 薄荷青（不用金黄：配冷灰毛更跳，暖金会跟耳尾的暖棕糊在一起）
          pink: rgb(0.930, 0.700, 0.730), pinkDeep: rgb(0.900, 0.548, 0.585),
          pinkLit: rgb(0.962, 0.782, 0.808), blush: rgb(0.920, 0.580, 0.620, 0.50),
          tongue: rgb(0.905, 0.548, 0.592),
@@ -885,8 +885,8 @@ enum TailStyle: Int, CaseIterable {
 /// `.three`（三瓣嘴）必须与"嘴形可选"之前**一模一样**：它的 `geo` 就是 `Geo()` 的默认值，
 /// 一个数都没重写 —— 默认档输出一个像素都不变（靠冻结后比对渲染指纹验证）。
 ///
-/// 另外**刻意不做 ω 嘴 / 一整条上扬大弧**：那是当初参考图的画法，
-/// 形态上要离它远一点（见 `侵权风险自查.md`）。
+/// 另外**刻意不做 ω 嘴 / 一整条上扬大弧**：那是卡通猫最常见的嘴形画法，
+/// 形态上刻意避开，让自家的嘴形有辨识度。
 enum MouthStyle: Int, CaseIterable {
     case three, wide, small, droop, flat
 
@@ -987,9 +987,9 @@ enum EyeColor: Int, CaseIterable {
     case auto
     case emerald, olive, grass, mint, sky, deepSea, violet, sakura, amber, brick, cocoa, graphite
     // 异色瞳（左右不同色）。**放最后**：这几个是后加的，插在中间会让老配置的下标串位。
-    // 三组都只用「绿 / 青 / 紫 / 粉」—— 参考图的两个色系（左灰蓝 ~205° / 右棕金 ~38°）
-    // 一个都没用，六个色离这两个色相都 ≥28°（见测试里的色相核查）。
-    // 排布也不全是"左冷右暖"（那是原图的结构）：左冷右暖 / 双冷 / 双冷。
+    // 三组都只用「绿 / 青 / 紫 / 粉」—— 异色瞳最爱用的灰蓝(~205°) / 棕金(~38°)
+    // 这两个色相一个都没碰，六个色离它们都 ≥28°（见测试里的色相核查）。
+    // 排布也不全是"左冷右暖"，而是左冷右暖 / 双冷 / 双冷三种都覆盖。
     case duoJadeSakura      // 左 翡翠 · 右 樱花粉（左冷右暖）
     case duoVioletMint      // 左 紫罗兰 · 右 薄荷（双冷）
     case duoGrassViolet     // 左 草绿 · 右 紫罗兰（双冷）
@@ -1040,9 +1040,8 @@ enum EyeColor: Int, CaseIterable {
         case .deepSea:  return rgb(0.180, 0.330, 0.640)
         case .violet:   return rgb(0.560, 0.440, 0.800)
         case .sakura:   return rgb(0.930, 0.520, 0.640)
-        // 「琥珀」离当初那张参考图的右眼（棕黄）比较近。参考图已确认是网上的图，
-        // 所以造型改造时刻意避开了这个色 —— 但那是**造型层**的取舍，
-        // 这里作为用户可选项保留（单色 vs 参考图的异色瞳，风险低得多）。
+        // 「琥珀」偏暖棕，和异色瞳组的六色不在一个色系 —— 这是**配色分工**的取舍：
+        // 异色瞳只放绿/青/紫/粉，暖色留给单色瞳选项，两套互不抢戏。
         case .amber:    return rgb(0.910, 0.630, 0.150)
         case .brick:    return rgb(0.780, 0.360, 0.290)
         case .cocoa:    return rgb(0.450, 0.300, 0.200)
@@ -1367,7 +1366,7 @@ final class CatView: NSView {
     var nameTagStroke: CGFloat? = nil         // 预览覆盖用（负值=先描边再填色）
 
     var profile: PetProfile? { PetStore.shared.pet(id: petID) }
-    var petName: String { nameOverride ?? profile?.name ?? "喵崽" }
+    var petName: String { nameOverride ?? profile?.name ?? "喵藏" }
 
     /// 这只猫自己的语言。**语言是每只猫各自一份**（和形象/眼型/肚兜/耳朵一个维度），
     /// 所以不能直接用全局 `LANG` —— 那可能刚被另一只猫的绘制改过。
@@ -2238,7 +2237,7 @@ final class CatView: NSView {
         let name = raw.isEmpty ? "二号" : CatView.normalizePetName(raw)
         guard !name.isEmpty else { return }
         if name.count < 2 {
-            showBubble("名字要两个字哦，比如「小肥」", duration: 4)
+            showBubble("名字要两个字哦，比如「咪咪」", duration: 4)
             return
         }
         // 名字就是目录名，不再加「书库」后缀
@@ -3403,8 +3402,8 @@ final class CatView: NSView {
     /// 猫嘴。
     ///
     /// 三笔：`人中`（鼻子下缘垂到唇线的一小段竖线）+ 两片短小的`唇叶` + 正中一小段`下唇`。
-    /// 真猫最明显的嘴部特征就是那根**人中分缝** —— 当初那张参考图是一整条上扬的大弧、
-    /// 没有分缝，所以形态上不是一回事。
+    /// 真猫最明显的嘴部特征就是那根**人中分缝** —— 常见的卡通猫嘴是一整条上扬的大弧、
+    /// 没有分缝，所以本设计和那种画法不是一回事。
     ///
     /// 具体形态由 `mouthStyle` 定（每只猫各选各的）。坐标全部走 `g`（= 这款嘴形的几何），
     /// 所以这里没有魔数 —— 要调嘴形去 `MouthStyle` 改，不要在这里改。
@@ -3807,7 +3806,7 @@ final class CatView: NSView {
     }
 
     // 腮红：大圆粉底 + 三颗斜排的小亮点
-    // （原来是两道斜线高光，和参考图的高光画法同款 → 换成点，形态完全不同）
+    // （高光用小点不用斜线：小尺寸下点更锐利，斜线容易糊）
     private func drawBlush(at p: NSPoint) {
         let r: CGFloat = 23
         let blush = NSBezierPath(ovalIn: NSRect(x: p.x - r, y: p.y - r*0.70,

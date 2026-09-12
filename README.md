@@ -276,7 +276,7 @@ printf '%s' "随手记一条" | $PY ~/.catpet/fetcher.py --root ~/Documents/喵�
 |---|---|---|
 | `main.swift` | ~4800 | 全部 UI：窗口、绘制、事件、菜单 |
 | `fetcher.py` | ~1260 | 引擎（跨平台，只需要 Python） |
-| `make_appicon.swift` | 90 | 应用图标合成（源图 → 1024 母版） |
+| `harness/tools/render_appicon.swift` | ~150 | 应用图标渲染（项目绘制代码 → 1024 母版） |
 | `build.sh` / `catpet.sh` | 350 | 安装 / 启停 |
 
 ---
@@ -359,7 +359,7 @@ printf '%s' "随手记一条" | $PY ~/.catpet/fetcher.py --root ~/Documents/喵�
 ```bash
 bash build.sh                       # 编译 + 安装 + 重启
 ~/.catpet/catpet.sh restart         # 只重启
-bash export_art.sh                  # 重导「猫崽角色设计_版权材料」（版权登记用）
+bash export_art.sh                  # 重导角色形象登记材料（版权登记用）
 ```
 
 - **快照**：每次改动前会把 `main.swift` 存一份到 `.snapshots/`，文件名带时间和改动说明
@@ -412,15 +412,17 @@ MIAOZANG_VERSION=1.1.0 bash dist/build_app.sh   # 指定版本
 
 ## 打包 / 图标
 
-应用图标是**多尺寸 `.icns`**，由 `make_appicon.swift` + `build.sh` 生成：
+应用图标是**多尺寸 `.icns`**，由 `harness/tools/render_appicon` + `build.sh` 生成：
 
 ```
-appicon_source.png  →  make_appicon.swift  →  appicon.png（1024 母版）
-                                                ↓  sips 缩 5 档 ×2 + iconutil
-                                          AppIcon.icns（放进 bundle）
+项目绘制代码（CatView）→  render_appicon  →  appicon.png（1024 母版）
+                                              ↓  sips 缩 5 档 ×2 + iconutil
+                                        AppIcon.icns（放进 bundle）
 ```
 
-换图只要替换 `appicon_source.png` 再跑一次 `build.sh`。
+图标**整个由本项目自己的绘制代码渲出来**，不含任何外部图片素材 ——
+所以任意尺寸都锐利（不是小图放大插值），也不存在素材来源的合规问题。
+换图标 = 改渲染参数再跑一次 `bash build.sh`（母版缺失时会自动重渲）。
 
 ![图标](docs/icon.png)
 
@@ -432,7 +434,7 @@ appicon_source.png  →  make_appicon.swift  →  appicon.png（1024 母版）
 MiaoZaiWiki/
 ├── main.swift                 全部 UI（窗口 / 绘制 / 事件 / 菜单）
 ├── fetcher.py                 引擎（跨平台 CLI）
-├── make_appicon.swift         图标合成
+├── appicon.png                应用图标母版（由 render_appicon 用项目代码渲出）
 ├── Info.plist                 bundle 元信息
 ├── build.sh / catpet.sh       安装 / 启停
 ├── dist/
@@ -443,8 +445,7 @@ MiaoZaiWiki/
 │
 │   —— 以下是本地目录，已在 .gitignore 排除，克隆仓库看不到 ——
 ├── 发布/                      小红书等宣传配图
-├── 猫崽角色设计_版权材料/      版权登记材料（含 66 款变体导出）
-│   └── 侵权自查/              侵权风险自查文档 + 比对证据图
+├── *角色设计_版权材料/         版权登记材料（不进仓库，跑 export_art.sh 生成）
 └── .snapshots/                每次改动的源码快照
 ```
 
@@ -454,7 +455,7 @@ MiaoZaiWiki/
 
 - 代码是本项目自研，以 **MIT** 许可开源（见根目录 [LICENSE](LICENSE)）；
   依赖全部是宽松许可（MIT / BSD / Apache-2.0 / MPL / PSF），无 AGPL / GPL-only，声明附在 LICENSE 末尾
-- **「喵崽」猫角色形象有版权**：应用图标（`appicon_source.png`）、README 插图与猫的全部
+- **「喵藏」猫角色形象有版权**：应用图标（`appicon.png`，由项目绘制代码渲出）、README 插图与猫的全部
   美术设计（7 维度形象体系）**保留所有权利**，不在 MIT 许可范围内 —— MIT 只覆盖代码；
   未经许可请勿复制、二次分发或商用这些形象素材
 - 抓取内容的**版权归原作者**，本工具仅供个人存档阅读，请勿二次分发抓来的内容

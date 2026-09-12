@@ -1,4 +1,4 @@
-// ============ 猫崽角色设计 · 版权材料导出驱动 ============
+// ============ 角色设计 · 版权材料导出驱动 ============
 import Foundation
 import Cocoa
 
@@ -14,9 +14,24 @@ let CW: CGFloat = 186, CH: CGFloat = 205      // 画布（和 App 一致）
 let SCALE: CGFloat = 6                        // 位图倍率 → 最终约 900×900
 let MARGIN: CGFloat = 8                       // 裁切外扩留白（pt）
 
-// 输出目录取**当前工作目录**下的「猫崽角色设计_版权材料」——
+// 输出目录取**当前工作目录**下的角色设计材料目录 ——
 // export_art.sh 里已经 cd 到项目根目录了，所以不用（也不该）写死绝对路径。
-let ROOT = FileManager.default.currentDirectoryPath + "/猫崽角色设计_版权材料"
+//
+// 但这个目录名被改过好几次（猫崽角色设计_版权材料 → 猫藏角色设计_版权材料 →
+// 角色设计_版权材料）。**写死名字等于每改一次名就静默指向空目录**（踩过），
+// 所以按「*版权材料」后缀探测：已存在就复用，一个都找不到才用默认名新建。
+func resolveArtDir() -> String {
+    let fm = FileManager.default
+    let cwd = fm.currentDirectoryPath
+    var isDir: ObjCBool = false
+    for n in (try? fm.contentsOfDirectory(atPath: cwd)) ?? [] where n.hasSuffix("版权材料") {
+        if fm.fileExists(atPath: cwd + "/" + n, isDirectory: &isDir), isDir.boolValue {
+            return cwd + "/" + n
+        }
+    }
+    return cwd + "/角色设计_版权材料"
+}
+let ROOT = resolveArtDir()
 let T: TimeInterval = 1_000_000               // 钉死的"当前时间"
 CatView.renderTime = T
 

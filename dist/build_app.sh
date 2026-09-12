@@ -83,26 +83,26 @@ say "   ✓ $(basename "$APP_NAME") / $EXEC_NAME / $APP_ID"
 
 # ── ④ 应用图标 ──
 say "③ 应用图标…"
-if [ -f "$ROOT/appicon_source.png" ]; then
+# 图标母版 appicon.png 由 harness/tools/render_appicon 用**项目自己的绘制代码**渲出来，
+# 不再依赖任何外部图片素材（原来那张 appicon_source.png 已清出项目）。
+# 这里只负责把 1024 母版转成 .icns。
+if [ -f "$ROOT/appicon.png" ]; then
     TMPICON="$(mktemp -d)"
-    ( cd "$ROOT" && swiftc -O -o "$TMPICON/mkicon" make_appicon.swift >/dev/null 2>&1 && \
-      "$TMPICON/mkicon" "$ROOT" >/dev/null && mv "$ROOT/appicon.png" "$TMPICON/appicon.png" )
-    if [ -f "$TMPICON/appicon.png" ]; then
-        ICONSET="$TMPICON/AppIcon.iconset"; mkdir -p "$ICONSET"
-        for spec in "16 icon_16x16" "32 icon_16x16@2x" "32 icon_32x32" "64 icon_32x32@2x" \
-                    "128 icon_128x128" "256 icon_128x128@2x" "256 icon_256x256" \
-                    "512 icon_256x256@2x" "512 icon_512x512" "1024 icon_512x512@2x"; do
-            set -- $spec
-            sips -z "$1" "$1" "$TMPICON/appicon.png" --out "$ICONSET/$2.png" >/dev/null 2>&1
-        done
-        iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns" \
-            && say "   ✓ AppIcon.icns"
+    ICONSET="$TMPICON/AppIcon.iconset"; mkdir -p "$ICONSET"
+    for spec in "16 icon_16x16" "32 icon_16x16@2x" "32 icon_32x32" "64 icon_32x32@2x" \
+                "128 icon_128x128" "256 icon_128x128@2x" "256 icon_256x256" \
+                "512 icon_256x256@2x" "512 icon_512x512" "1024 icon_512x512@2x"; do
+        set -- $spec
+        sips -z "$1" "$1" "$ROOT/appicon.png" --out "$ICONSET/$2.png" >/dev/null 2>&1
+    done
+    if iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"; then
+        say "   ✓ AppIcon.icns"
     else
         say "   ! 图标生成失败，跳过（app 会用系统默认图标）"
     fi
     rm -rf "$TMPICON"
 else
-    say "   ! 没有 appicon_source.png，跳过"
+    say "   ! 没有 appicon.png —— 先跑 ./harness/build/render_appicon 生成母版，跳过图标"
 fi
 
 # ── ⑤ 内嵌引擎 ──

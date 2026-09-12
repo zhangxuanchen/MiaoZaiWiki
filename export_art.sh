@@ -33,4 +33,7 @@ echo "==> 运行导出"
 "$TMP/export_art_bin"
 
 echo
-echo "✅ 完成。材料目录：猫崽角色设计_版权材料/"
+# 目录名改过好几次（猫崽→猫藏→去掉前缀），所以**探测**而不是写死。
+# find 的 -print -quit 取第一个匹配，避免 zsh 下 glob 不匹配直接报错。
+ART_DIR="$(find . -maxdepth 1 -type d -name '*版权材料' -print -quit)"
+echo "✅ 完成。材料目录：${ART_DIR:-未生成}/"

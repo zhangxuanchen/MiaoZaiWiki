@@ -102,7 +102,7 @@ cp "${SKILL_ROOT}/assets/PetApp.swift" "${TARGET}/main.swift"
 printf "  %-16s %s 行（模板 app）\n" "main.swift" "$(wc -l < "${TARGET}/main.swift" | tr -d ' ')"
 
 for f in build.sh mkhead.py common.swift fingerprint.swift render_sheet.swift \
-         verify.swift export_spec.swift compare_sheet.swift; do
+         verify.swift export_spec.swift compare_sheet.swift make_cats.swift; do
     cp "${SKILL_ROOT}/scripts/${f}" "${TARGET}/harness/tools/${f}"
 done
 cp "${SKILL_ROOT}/scripts/baseline.txt" "${TARGET}/harness/baseline.txt"
@@ -113,6 +113,14 @@ for f in new_pet.sh pack_app.sh; do
     [ -f "${SKILL_ROOT}/scripts/${f}" ] && cp "${SKILL_ROOT}/scripts/${f}" "${TARGET}/scripts/${f}"
 done
 printf "  %-16s %s\n" "scripts/" "new_pet.sh pack_app.sh"
+
+# 合规材料必须跟着项目走 —— 见 SKILL.md「分发前必读」。
+# 最高法《意见》第十三条：免费开源 + **公开说明其功能和安全风险** 才可能免责，
+# 少这一份就等于主动放弃这条路径。
+if [ -f "${SKILL_ROOT}/DISCLAIMER.md" ]; then
+    cp "${SKILL_ROOT}/DISCLAIMER.md" "${TARGET}/DISCLAIMER.md"
+    printf "  %-16s %s\n" "DISCLAIMER.md" "功能与风险说明（合规材料）"
+fi
 
 cp "${SKILL_ROOT}/assets/PetStarter.swift" "${TARGET}/starter/"
 [ -f "${SKILL_ROOT}/assets/parameter-demo.png" ] && \

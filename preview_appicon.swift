@@ -11,7 +11,9 @@ let stripSizes: [CGFloat] = [16, 32, 64, 128]
 let cellW: CGFloat = 92, cellGap: CGFloat = 8
 let stripH = stripSizes.max()! + 34
 let stripsW = cellW * CGFloat(stripSizes.count) + cellGap * CGFloat(stripSizes.count - 1)
-let W = pad * 2 + max(hero + 260, stripsW)
+// ⚠️ 右边文字区的宽度 = W - (pad + hero + 24) - pad，这里必须留够 ——
+//    原值 hero + 260 只够 19 个中文字，说明文字一长就被**静默裁掉**（尾巴看不见）。
+let W = pad * 2 + max(hero + 460, stripsW)
 let H = pad * 2 + 54 + (hero + 34) + 46 + (stripH + 30) * 2
 
 let canvas = NSImage(size: NSSize(width: W, height: H))
@@ -35,9 +37,9 @@ load("icon_256x256@2x.png").draw(in: NSRect(x: pad, y: top - hero, width: hero, 
 text("256pt", pad, top - hero - 20, 11, grey: 0.7)
 text("母版是 1024×1024：透明画布 + 824 的白色圆角底板（圆角 184）+ 极淡的一圈描边。",
      pad + hero + 24, top - 26, 12, grey: 0.88)
-text("猫从原图抠掉白边后等比放大 2.51×，摆在底板正中间。", pad + hero + 24, top - 48, 12, grey: 0.88)
-text("原图只有 254×268，所以 512 那档会偏柔和 —— 想要真正锐利的", pad + hero + 24, top - 70, 12, grey: 0.88)
-text("大图标，得重画成矢量（可以照这张的构图来）。", pad + hero + 24, top - 92, 12, grey: 0.88)
+text("猫由项目自己的绘制代码渲出（矢量），摆在底板正中间。", pad + hero + 24, top - 48, 12, grey: 0.88)
+text("好处是任意尺寸都锐利 —— 不再有「外部小图放大插值」带来的柔边，", pad + hero + 24, top - 70, 12, grey: 0.88)
+text("而且整个图标 100% 自主，不含任何外来源素材。", pad + hero + 24, top - 92, 12, grey: 0.88)
 top -= hero + 34 + 30
 for (name, bg, fg) in [("浅色背景（Finder 白底窗口）", NSColor(calibratedWhite: 0.97, alpha: 1), NSColor.darkGray),
                        ("深色背景（深色模式 / 深色壁纸）", NSColor(calibratedWhite: 0.13, alpha: 1), NSColor.lightGray)] {

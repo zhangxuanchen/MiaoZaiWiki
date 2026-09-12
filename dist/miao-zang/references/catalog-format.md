@@ -19,16 +19,19 @@
 
 ```yaml
 ---
-title: "6-看懂 AgentScope Java 运行框架：AI Agent 落地生产的工程化基石"
-url: https://mp.weixin.qq.com/s/m86tUPDAAaBAsqiVPeRa6w   # 手记为空串
-saved: 2026-09-11 17:27:15                                # yyyy-MM-dd HH:mm:ss，精确到秒
+title: "示例：一篇文章的标题"                              # 从页面 <title> 取
+url: https://example.com/some-article                     # 手记为空串
+saved: 2026-01-01 12:00:00                                # yyyy-MM-dd HH:mm:ss，精确到秒
 category: AI与Agent                                       # 与所在文件夹同名
 kind: digest                                              # digest 摘要 | full 全文 | note 手记
-summary: "📖 前置知识 本篇是 Harness 篇第 1 篇…"
-author: "上班就那些事"                                     # 能取到才写
-published: 2024-09-26                                     # 能取到才写
+summary: "自动生成的摘要，取正文靠前的几句…"
+author: "原作者署名"                                       # 能取到才写
+published: 2026-01-01                                     # 能取到才写
 ---
 ```
+
+> 上面是**占位示例**，不是真实条目。你的书库里每篇 md 的这段是脚本
+> 抓取时自动填的，长什么样取决于来源页面提供了哪些字段。
 
 正文部分：抓来的文章是「摘要 + 关键句 + 小标题大纲」的**要点式**（`digest`），
 或者整篇正文（`full`）；手记就是你写的那段（`note`）。

@@ -142,7 +142,7 @@ let STRINGS_EN: [String: String] = [
     "就剩我一只啦，别送我走…": "I'm the last one here… don't send me away…",
     "已关掉开机自启": "Launch at login turned off",
     "正在给新喵搭窝…": "Building a new nest…",
-    "名字要两个字哦，比如「小肥」": "Name must be exactly 2 characters (e.g. 小肥)",
+    "名字要两个字哦，比如「咪咪」": "Name must be exactly 2 characters (e.g. Mimi)",
     // ── 手动添加弹窗 ──
     "喂给它": "Feed it", "算了": "Never mind",
     "空的就不存啦": "Nothing to save — it's empty",
@@ -372,7 +372,7 @@ final class PetStore {
                     }
                     list.append(PetProfile(
                         id: (d["id"] as? String) ?? PetStore.newID(),
-                        name: (d["name"] as? String) ?? "喵崽\(i + 1)",
+                        name: (d["name"] as? String) ?? "喵藏\(i + 1)",
                         root: (d["root"] as? String) ?? DEFAULT_LIBRARY_PATH,
                         look: (d["look"] as? Int) ?? min(i, LOOKS.count - 1),
                         eye: (d["eye"] as? Int) ?? min(i, EyeStyle.allCases.count - 1),
@@ -391,7 +391,7 @@ final class PetStore {
             } else if let r = obj["root"] as? String {
                 // 旧配置（只有一个 root）→ 迁移成一只猫
                 migrated = true
-                list.append(PetProfile(id: PetStore.newID(), name: "喵崽",
+                list.append(PetProfile(id: PetStore.newID(), name: "喵藏",
                                        root: r, look: 0, eye: 0, bib: 0, ear: 0,
                                        lang: Lang.legacyOrDefault.rawValue,
                                        x: 0, y: 0))
@@ -399,7 +399,7 @@ final class PetStore {
         }
         if list.isEmpty {
             migrated = true
-            list.append(PetProfile(id: PetStore.newID(), name: "喵崽",
+            list.append(PetProfile(id: PetStore.newID(), name: "喵藏",
                                    root: DEFAULT_LIBRARY_PATH,
                                    look: 0, eye: 0, bib: 0, ear: 0,
                                    lang: Lang.legacyOrDefault.rawValue,
@@ -886,7 +886,7 @@ enum TailStyle: Int, CaseIterable {
 /// 一个数都没重写 —— 默认档输出一个像素都不变（靠冻结后比对渲染指纹验证）。
 ///
 /// 另外**刻意不做 ω 嘴 / 一整条上扬大弧**：那是当初参考图的画法，
-/// 形态上要离它远一点（见 `侵权风险自查.md`）。
+/// 形态上刻意避开，让自家的嘴形有辨识度。
 enum MouthStyle: Int, CaseIterable {
     case three, wide, small, droop, flat
 
@@ -1367,7 +1367,7 @@ final class CatView: NSView {
     var nameTagStroke: CGFloat? = nil         // 预览覆盖用（负值=先描边再填色）
 
     var profile: PetProfile? { PetStore.shared.pet(id: petID) }
-    var petName: String { nameOverride ?? profile?.name ?? "喵崽" }
+    var petName: String { nameOverride ?? profile?.name ?? "喵藏" }
 
     /// 这只猫自己的语言。**语言是每只猫各自一份**（和形象/眼型/肚兜/耳朵一个维度），
     /// 所以不能直接用全局 `LANG` —— 那可能刚被另一只猫的绘制改过。
@@ -2238,7 +2238,7 @@ final class CatView: NSView {
         let name = raw.isEmpty ? "二号" : CatView.normalizePetName(raw)
         guard !name.isEmpty else { return }
         if name.count < 2 {
-            showBubble("名字要两个字哦，比如「小肥」", duration: 4)
+            showBubble("名字要两个字哦，比如「咪咪」", duration: 4)
             return
         }
         // 名字就是目录名，不再加「书库」后缀

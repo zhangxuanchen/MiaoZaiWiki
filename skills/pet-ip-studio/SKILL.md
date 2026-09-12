@@ -36,6 +36,7 @@ Swift 语言本身跨平台，**AppKit 不跨**。所以「渲染对照图 → �
 ```
 pet-ip-studio/
 ├── SKILL.md              你正在读的
+├── DISCLAIMER.md         ★ 功能与风险说明（合规材料，分发前必读）
 ├── references/           参数手册 / 验证手册 / 坑清单
 ├── assets/
 │   ├── PetApp.swift      ★ 模板 app —— 一份跑通的完整实现，**做新宠物就改它**
@@ -52,6 +53,7 @@ pet-ip-studio/
     ├── verify.swift      19 条断言，覆盖 62 个档位
     ├── export_spec.swift 导出参数快照
     ├── compare_sheet.swift 通用出图工具（N 张图拼一张）
+    ├── make_cats.swift   ★ 出「吸粉卡」的模板（4 张竖版 1080×1440）
     └── baseline.txt      渲染基线指纹
 ```
 
@@ -67,6 +69,24 @@ bash scripts/new_pet.sh ~/Projects/我的新宠物
 就跑 `bash ~/.workbuddy/skills/pet-ip-studio/scripts/new_pet.sh …`。）
 
 铺完就 `cd` 进那个目录，后面所有命令都在**项目根**下执行。
+
+## ⚠️ 分发前必读：`DISCLAIMER.md` 不是可选项
+
+`DISCLAIMER.md` 是**合规材料**，不是免责话术。它对应的是
+《最高人民法院关于依法审理涉人工智能纠纷案件的意见》（法发〔2026〕10号）
+**第十三条**：
+
+> 开源软件开发者、提供者以**免费开源**的方式提供涉人工智能软件研发所需要的
+> **部分代码模块**，并**公开说明其功能和安全风险**，他人使用该代码模块导致侵权的，
+> 人民法院**可以认定开源软件开发者、提供者不承担侵权责任**。
+
+三个要件里，「免费开源」和「提供代码模块」是这套 skill 天然满足的，
+**「公开说明其功能和安全风险」是唯一需要你主动做的事** ——
+少写这一份，就等于主动放弃这条免责可能性。
+
+所以：**做新宠物时把 `DISCLAIMER.md` 一起拷到项目根目录**，
+并把里面「这套代码」的描述改成你的实际情况（比如你改成了别的物种、
+或者加了联网功能 —— 那"不联网"那条必须删掉，别留着假话）。
 
 ## 三条铁律
 
@@ -276,6 +296,40 @@ bash scripts/pack_app.sh --name 我的宠物 --exec MyPet --id com.example.mypet
 图标（`.icns` 从 1024 母版）、小红书文案配图、版权登记材料。
 **对外发布前先过合规**：形象来源、依赖许可、名字商标。
 
+### 出吸粉卡（`scripts/make_cats.swift`）
+
+一份**宣传卡模板**：一次出 4 张 1080×1440 竖版卡，每张 =
+编号徽章 + 宠物大图 + 名字 + 3 个性格标签 + 一句话人设 + 署名。
+
+```bash
+bash harness/tools/build.sh
+./harness/build/make_cats --out 发布/吸粉卡
+```
+
+**版式 4 张完全一致**（成套的关键在"版式不动"），只换色和内容。
+要拿它给自己的宠物出卡，改文件顶部那个 `MC_CATS` 数组即可：
+
+```swift
+McCat(no: 1, look: 0, name: "奶盖",
+      traits: ["温柔", "慢热", "爱睡觉"],
+      quote: "天塌下来，\n也是先睡够再说。",
+      state: "idle", bg: …, accent: …)
+```
+
+`accent` 取**宠物主色的加深版**、`bg` 取**比毛色再淡一档** ——
+4 张并排时主色调要能一眼分得开（喵藏那套是 暖金→橘→蓝灰→藕粉）。
+
+三条订过的规矩（全是踩出来的）：
+
+| 规矩 | 为什么 |
+|---|---|
+| 名字**必须 2 个字** | 围兜印名字走 `drawNameTag`，里面是 `String(name.prefix(2))` —— 三个字会被**悄悄截断**，不报错不警告 |
+| 表情**别望文生义** | `CatState.love` 渲出来是 **XX 眼**（"被萌晕"的画法），不是爱心眼。缩略图里看着像爱心，放大到卡片尺寸就是一双叉、像眼睛坏了 |
+| 卡上的图**必须**是这套代码渲的 | 拿 AI 图或概念稿拼，别人拿到项目一跑就对不上 —— 这条不是合规，是信誉 |
+
+> 顺带：`makeCat(name:)` 的默认值就是「测试」，所以所有对照图上围兜都印着"测试"。
+> 出正式物料时记得传真名字（2 字）。
+
 ## 命令速查
 
 ```bash
@@ -291,6 +345,7 @@ bash harness/tools/build.sh                             # 编译工具
 ./harness/build/render_sheet --all --outdir harness/out   # 全部维度
 ./harness/build/verify                                   # 全部断言
 ./harness/build/export_spec > harness/ip-spec.json       # 导出参数快照
+./harness/build/make_cats --out 发布/吸粉卡                # 出 4 张吸粉卡
 python3 harness/tools/mkhead.py                          # 手动切 head（一般由 build.sh 调）
 ```
 

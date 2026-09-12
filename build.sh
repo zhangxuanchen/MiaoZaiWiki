@@ -46,7 +46,7 @@ if [ ! -f "$DEPLOY_DIR/config.json" ]; then
   FIRST_RUN=1
   cat > "$DEPLOY_DIR/config.json" <<'JSON'
 {
-  "root": "~/Documents/喵崽书库",
+  "root": "~/Documents/喵藏书库",
   "fallback": "收件箱",
   "categories": [
     {"name": "AI与Agent", "keywords": ["agent","agents","llm","大模型","gpt","claude","openai","anthropic","prompt","transformer","embedding","rag","机器学习","深度学习","推理","训练","微调","对齐","rlhf","harness","上下文","context","tool use","function call","mcp","skill","agentic","workflow","评估","evaluation"]},
@@ -152,20 +152,23 @@ cp "$DEPLOY_DIR/${EXEC_NAME}" "$APP_BUNDLE/Contents/MacOS/${EXEC_NAME}"
 cp "$SRC_DIR/Info.plist" "$APP_BUNDLE/Contents/Info.plist"
 
 # 应用图标：从 appicon.png（1024 母版）生成 AppIcon.icns。
-# 母版由 make_appicon.swift 从 appicon_source.png 合成 —— 改图只改源图即可。
+# 母版由 harness/tools/render_appicon 用**项目自己的绘制代码**渲出来 ——
+# 不再依赖任何外部图片素材（原来那张 appicon_source.png 已清出项目）。
 # 10.13+ 的 sips 能直接缩，iconutil 负责把 .iconset 打成 .icns（都是系统自带，无额外依赖）。
-# 母版缺失但有源图时现场合成一份 —— 不然每次重建 .app 都会"跳过图标"，
+# 母版缺失时现场渲一份 —— 不然每次重建 .app 都会"跳过图标"，
 # 装出来的应用永远是系统默认白图（这个坑踩过）。
-if [ ! -f "$SRC_DIR/appicon.png" ] && [ -f "$SRC_DIR/appicon_source.png" ]; then
-  echo "==> 合成图标母版 appicon.png（从 appicon_source.png）"
-  TMPICON="$(mktemp -d)"
-  if ( cd "$SRC_DIR" && swiftc -O -o "$TMPICON/mkicon" make_appicon.swift >/dev/null 2>&1 \
-       && "$TMPICON/mkicon" "$SRC_DIR" >/dev/null 2>&1 ); then
-    echo "   ✓ 母版已生成"
+if [ ! -f "$SRC_DIR/appicon.png" ]; then
+  echo "==> 没有图标母版，用项目代码渲一份"
+  if [ -x "$SRC_DIR/harness/build/render_appicon" ]; then
+    if ( cd "$SRC_DIR" && ./harness/build/render_appicon --out harness/out >/dev/null 2>&1 \
+         && cp "harness/out/appicon_look0_奶白.png" "$SRC_DIR/appicon.png" ); then
+      echo "   ✓ 母版已生成"
+    else
+      echo "   ⚠️ 生成失败，继续用旧的（如果有）"
+    fi
   else
-    echo "   ⚠️ 母版合成失败，继续用旧的（如果有）"
+    echo "   ⚠️ 还没编过 render_appicon —— 先跑 bash harness/tools/build.sh"
   fi
-  rm -rf "$TMPICON"
 fi
 if [ -f "$SRC_DIR/appicon.png" ]; then
   echo "==> 生成应用图标 AppIcon.icns"
@@ -182,7 +185,7 @@ if [ -f "$SRC_DIR/appicon.png" ]; then
     echo "   ⚠️ 图标生成失败（不影响其它功能，会退回系统默认图标）"
   fi
 else
-  echo "==> 没有 appicon.png，跳过图标（先跑 make_appicon.swift 生成）"
+  echo "==> 没有 appicon.png，跳过图标（先跑 ./harness/build/render_appicon 生成）"
 fi
 
 # 碰一下 bundle：Finder 的图标缓存按修改时间判断，不碰可能还显示旧图标

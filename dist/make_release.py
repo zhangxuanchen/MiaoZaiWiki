@@ -138,8 +138,11 @@ TOP_FILES = [
     "main.swift", "fetcher.py", "build.sh", "catpet.sh", "Info.plist",
     "LICENSE", "README.md", "README.en.md", ".gitignore",
     "export_art.sh", "export_art.swift", "export_art_head.py",
-    "make_appicon.swift", "preview_appicon.swift", "refetch_all.py",
-    "appicon.png", "appicon_source.png",
+    "preview_appicon.swift", "refetch_all.py",
+    # 只带 appicon.png（1024 母版）。图标由 harness/tools/render_appicon 用项目
+    # 自己的绘制代码渲出来，**不依赖任何外部图片素材** —— 原来那张
+    # appicon_source.png 已清出项目，不要再往包里加。
+    "appicon.png",
 ]
 
 
@@ -162,7 +165,14 @@ def build_src():
     # dist：只要脚本和 skill 源；构建产物（.engine/.stage 各 90M+）和出货包都排除
     copy_tree(DIST, dst / "dist",
               skip_dirs=(".engine", ".stage", "release"))
-    copy_tree(ROOT / "猫崽角色设计_版权材料", dst / "版权材料")
+    # 版权材料目录的名字改过好几次（猫崽角色设计_ → 猫藏角色设计_ → 角色设计_），
+    # 写死等于改名当天就静默少打一整块。按后缀探测。
+    _art = sorted(p for p in ROOT.iterdir()
+                  if p.is_dir() and p.name.endswith("版权材料"))
+    if _art:
+        copy_tree(_art[0], dst / "版权材料")
+    else:
+        say("! 没找到版权材料目录，跳过（跑 export_art.sh 生成）")
     copy_tree(ROOT / "发布", dst / "发布")
     copy_tree(ROOT / "docs", dst / "docs", skip_glob=("*.mp4",))
     copy_tree(ROOT / ".snapshots", dst / ".snapshots")

@@ -160,6 +160,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1   # Windows
 - **不要绕过命令直接改书库里的文件**（`.catalog.json` / `INDEX.md` 由脚本维护），
   手工加了文件就用 `--rescan` 对齐。
 
+**完整的功能与安全风险说明在 `DISCLAIMER.md`**（合规材料，对应最高法
+《关于依法审理涉人工智能纠纷案件的意见》第十三条的免责要件）——
+**分发这个 skill 时不要删掉它。**
+
+---
+
 ---
 
 ## 参考文件
